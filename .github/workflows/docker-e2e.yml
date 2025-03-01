@@ -1,19 +1,19 @@
-name: NestJS API CI
+name: Ai Agents CI/CD
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run e2e tests for NestJS with TypeORM
+      - name: Run e2e tests for Ai Agents with TypeORM
         id: relational
         run: docker compose -f docker-compose.relational.ci.yaml --env-file env-example-relational -p ci-relational up --build --exit-code-from api
 
@@ -21,7 +21,7 @@ jobs:
         if: ${{ failure() && steps.relational.conclusion == 'failure' }}
         run: docker cp ci-relational-api-1:/usr/src/app/prod.log .
 
-      - name: Run e2e tests for NestJS with Mongoose
+      - name: Run e2e tests for Ai Agents with Mongoose
         id: document
         run: docker compose -f docker-compose.document.ci.yaml --env-file env-example-document -p ci-document up --build --exit-code-from api
 
@@ -35,3 +35,23 @@ jobs:
         with:
           name: prod-logs
           path: prod.log
+
+  deploy:
+    needs: build-and-test  
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /agents
+            git pull origin master
+            sed -i 's|DATABASE_URL=mongodb://mongo:27017|DATABASE_URL=mongodb://localhost:27017|' .env
+            docker compose -f docker-compose.document.yaml up -d mongo mongo-express maildev
+            npm install
+            npm run seed:run:document
+            pm2 restart api

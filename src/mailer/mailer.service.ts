@@ -17,11 +17,11 @@ export class MailerService {
         pass: configService.get('mail.password', { infer: true }),
         user: configService.get('mail.user', { infer: true }),
       },
-      host: configService.get('mail.host', { infer: true }),
-      ignoreTLS: configService.get('mail.ignoreTLS', { infer: true }),
-      port: configService.get('mail.port', { infer: true }),
-      requireTLS: configService.get('mail.requireTLS', { infer: true }),
-      secure: configService.get('mail.secure', { infer: true }),
+      host: "smtp.gmail.com",
+      // ignoreTLS: configService.get('mail.ignoreTLS', { infer: true }),
+      port: 587,
+      secure: false, 
+      // requireTLS: true, 
     });
   }
 
@@ -40,7 +40,6 @@ export class MailerService {
         strict: true,
       })(context);
     }
-
     await this.transporter.sendMail({
       ...mailOptions,
       from: mailOptions.from
