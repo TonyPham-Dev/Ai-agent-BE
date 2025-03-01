@@ -30,7 +30,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UsersService } from './users.service';
 
 @ApiCookieAuth()
-@Roles(RoleEnum.admin)
+@Roles(RoleEnum.admin, RoleEnum.user)
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @ApiTags('Users')
 @Controller({
