@@ -21,9 +21,24 @@ jobs:
             set -e
             PROJECT_DIR="$HOME/agents"
             cd "$PROJECT_DIR"
+
+            echo "🚀 Pull latest code..."
             git pull origin master
+
+            echo "🔧 Updating environment variables..."
             sed -i 's|DATABASE_URL=mongodb://mongo:27017|DATABASE_URL=mongodb://localhost:27017|' .env
+
+            echo "🐳 Starting required services..."
             docker compose -f docker-compose.document.yaml up -d mongo mongo-express
+
+            echo "📦 Installing dependencies..."
             npm install
+
+            echo "🌱 Running database seeds..."
             npm run seed:run:document
-            pm2 restart api
+
+            echo "🔨 Building project..."
+            npm run build
+
+            echo "🚀 Restarting API..."
+            pm2 restart api || pm2 start dist/main.js --name api
