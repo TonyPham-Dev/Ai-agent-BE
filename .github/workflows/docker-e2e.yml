@@ -23,7 +23,7 @@ jobs:
             cd "$PROJECT_DIR"
             git pull origin master
             sed -i 's|DATABASE_URL=mongodb://mongo:27017|DATABASE_URL=mongodb://localhost:27017|' .env
-            docker compose -f docker-compose.document.yaml up -d mongo mongo-express maildev
+            docker compose -f docker-compose.document.yaml up -d mongo mongo-express
             npm install
             npm run seed:run:document
             pm2 restart api
