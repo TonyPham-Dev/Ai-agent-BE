@@ -38,7 +38,7 @@ export class AuthController {
   constructor(private readonly service: AuthService) {}
 
   @Post('email/confirm')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async confirmEmail(
     @Body() confirmEmailDto: AuthConfirmEmailDto,
   ): Promise<void> {
@@ -48,13 +48,13 @@ export class AuthController {
   @ApiCookieAuth()
   @Delete('me')
   @UseGuards(AuthGuard('jwt'))
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   public async delete(@Req() request): Promise<void> {
     return this.service.softDelete(request.user);
   }
 
   @Post('forgot/password')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async forgotPassword(
     @Body() forgotPasswordDto: AuthForgotPasswordDto,
   ): Promise<void> {
@@ -65,13 +65,13 @@ export class AuthController {
     groups: ['me'],
   })
   @Post('email/login')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   //@UseInterceptors(new CookieSessionInterceptor())
   public async login(
     @Body() loginDto: AuthEmailLoginDto,
     @Req() req,
     @Res({ passthrough: true }) res,
-  ): Promise<void> {
+  ) {
     const ua = UAParser(req.headers['user-agent']);
     const refreshTokenPayload: Partial<RefreshToken> = {
       browser: ua.browser.name,
@@ -83,13 +83,20 @@ export class AuthController {
       loginDto,
       refreshTokenPayload,
     );
-    res.setHeader('Set-Cookie', cookiePayload);
+    const getToken = (name: string): string | null => {
+      const cookie = cookiePayload.find((cookie) => cookie.startsWith(`${name}=`));
+      return cookie ? cookie.split('=')[1].split(';')[0] : null;
+    };
+    return {
+      authenticationToken: getToken('Authentication'),
+      refreshToken: getToken('Refresh'),
+    };
   }
 
   @ApiCookieAuth()
   @Post('logout')
   @UseGuards(AuthGuard('jwt'))
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   public async logout(
     @Req() req,
     @Res({ passthrough: true }) response,
@@ -118,7 +125,7 @@ export class AuthController {
     groups: ['me'],
   })
   @Post('refresh')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   public async refresh(
     @Req() req,
     @Res({ passthrough: true }) response,
@@ -138,7 +145,7 @@ export class AuthController {
   }
 
   @Post('reset/password')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   resetPassword(@Body() resetPasswordDto: AuthResetPasswordDto): Promise<void> {
     return this.service.resetPassword(
       resetPasswordDto.hash,
