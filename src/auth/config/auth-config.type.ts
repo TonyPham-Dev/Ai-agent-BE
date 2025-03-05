@@ -1,12 +1,12 @@
 export type AuthConfig = {
-  confirmEmailExpires?: string;
-  confirmEmailSecret?: string;
-  expires?: string;
-  forgotExpires?: string;
-  forgotSecret?: string;
-  refreshExpires?: string;
-  refreshSecret?: string;
-  secret?: string;
-  cookieExpires?: string;
-  isSameSite?: boolean;
+  faceBookClientId?: string;
+  faceBookClientSecret?: string;
+  faceBookRedirectUri?: string;
+  clientId?: string;
+  googleClientSecret?: string;
+  googleRedirectUri?: string;
+  tiktokClientId?: string;
+  tiktokClientSecret?: string;
+  tiktokRedirectUri?: string;
+
 };

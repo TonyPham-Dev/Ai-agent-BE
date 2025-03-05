@@ -38,7 +38,7 @@ export class AuthController {
   constructor(private readonly service: AuthService) {}
 
   @Post('email/confirm')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async confirmEmail(
     @Body() confirmEmailDto: AuthConfirmEmailDto,
   ): Promise<void> {

@@ -43,6 +43,7 @@ import { MailModule } from './mail/mail.module';
 import { MailerModule } from './mailer/mailer.module';
 import { SessionModule } from './session/session.module';
 import { UsersModule } from './users/users.module';
+import { ConnectSocialModule } from './connect-social/connect-social.module';
 
 @Module({
   imports: [
@@ -102,6 +103,7 @@ import { UsersModule } from './users/users.module';
     HomeModule,
     LoggerModule,
     RefreshTokenModule,
+    ConnectSocialModule
   ],
   providers: [
     {
