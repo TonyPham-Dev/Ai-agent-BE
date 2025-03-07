@@ -22,8 +22,11 @@ jobs:
             PROJECT_DIR="$HOME/agents"
             cd "$PROJECT_DIR"
 
+            echo "📌 Stashing any local changes to prevent conflicts..."
+            git stash || true
+
             echo "🚀 Pull latest code..."
-            git pull origin master
+            git pull origin master --rebase
 
             echo "🔧 Updating environment variables..."
             sed -i 's|DATABASE_URL=mongodb://mongo:27017|DATABASE_URL=mongodb://localhost:27017|' .env
