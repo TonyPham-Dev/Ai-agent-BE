@@ -9,4 +9,5 @@ export type AuthConfig = {
   secret?: string;
   cookieExpires?: string;
   isSameSite?: boolean;
+
 };
