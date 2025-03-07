@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import { CreateProfileSocialDto } from './dto/connect-social.dto';
 
 @Injectable()
 export class ConnectSocialService {
@@ -19,41 +20,48 @@ export class ConnectSocialService {
   
   async getTikTokAuthUrl(): Promise<string> {
     const clientId = this.configService.get<string>('TIKTOK_CLIENT_ID');
-    return `https://www.tiktok.com/auth/authorize?client_key=${clientId}&scope=user.info.basic&redirect_uri=${this.configService.get<string>('TIKTOK_REDIRECT_URI')}&response_type=code`;
+    const redirectUri = encodeURIComponent(this.configService.get<string>('TIKTOK_REDIRECT_URI') || ""); 
+    console.log({redirectUri})
+    return `https://www.tiktok.com/auth/authorize?client_key=${clientId}&scope=user.info.basic&redirect_uri=${redirectUri}&response_type=code`;
   }
+  
 
-  async exchangeCodeForToken(platform: string, code: string): Promise<any> {
-    console.log({platform, code})
-    const apiUrl = {
-      facebook: 'https://graph.facebook.com/v12.0/oauth/access_token',
-      google: 'https://oauth2.googleapis.com/token',
-      tiktok: 'https://open-api.tiktok.com/oauth/access_token/',
-    }[platform];
+  async exchangeCodeForToken(query: any): Promise<any> {
+   console.log({query})
+    // const {code, platform} = query
+    // const apiUrl = {
+    //   facebook: 'https://graph.facebook.com/v12.0/oauth/access_token',
+    //   google: 'https://oauth2.googleapis.com/token',
+    //   tiktok: 'https://open-api.tiktok.com/oauth/access_token/',
+    // }[platform];
   
-    if (!apiUrl) {
-      throw new Error(`Unsupported platform: ${platform}`);
-    }
+    // if (!apiUrl) {
+    //   throw new Error(`Unsupported platform: ${platform}`);
+    // }
   
-    const clientId = this.configService.get<string>(`${platform.toUpperCase()}_CLIENT_ID`);
-    const clientSecret = this.configService.get<string>(`${platform.toUpperCase()}_CLIENT_SECRET`);
-    const redirectUri = this.configService.get<string>(`${platform.toUpperCase()}_REDIRECT_URI`);
+    // const clientId = this.configService.get<string>(`${platform.toUpperCase()}_CLIENT_ID`);
+    // const clientSecret = this.configService.get<string>(`${platform.toUpperCase()}_CLIENT_SECRET`);
+    // const redirectUri = this.configService.get<string>(`${platform.toUpperCase()}_REDIRECT_URI`);
   
-    try {
-      const response = await axios.post(apiUrl, {
-        client_id: clientId,
-        client_secret: clientSecret,
-        code,
-        redirect_uri: redirectUri,
-        grant_type: 'authorization_code',
-      }, {
-        headers: { 'Content-Type': 'application/json' }
-      });
-      console.log(response.data)
-      return response.data;
-    } catch (error) {
-      console.error(`Error exchanging code for token witsh ${platform}:`, error.response?.data || error.message);
-      throw new Error('Failed to exchange authorization code for access token');
-    }
+    // try {
+    //   const response = await axios.post(apiUrl, {
+    //     client_id: clientId,
+    //     client_secret: clientSecret,
+    //     code,
+    //     redirect_uri: redirectUri,
+    //     grant_type: 'authorization_code',
+    //   }, {
+    //     headers: { 'Content-Type': 'application/json' }
+    //   });
+    //   console.log(response.data)
+    //   return {
+    //     data: response.data,
+    //     status: 200
+    //   };
+    // } catch (error) {
+    //   console.error(`Error exchanging code for token witsh ${platform}:`, error.response?.data || error.message);
+    //   throw new Error('Failed to exchange authorization code for access token');
+    // }
   }
   
 }

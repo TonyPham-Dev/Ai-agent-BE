@@ -34,6 +34,10 @@ async function bootstrap() {
   const configService = app.get(ConfigService<AllConfigType>);
 
   app.enableShutdownHooks();
+  app.use((req, res, next) => {
+    console.log(`[${req.method}] ${req.url}`, req.body);
+    next();
+  });
   app.setGlobalPrefix(
     configService.getOrThrow('app.apiPrefix', { infer: true }),
     {
