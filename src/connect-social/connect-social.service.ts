@@ -51,7 +51,7 @@ export class ConnectSocialService {
       console.log(response.data)
       return response.data;
     } catch (error) {
-      console.error(`Error exchanging code for token with ${platform}:`, error.response?.data || error.message);
+      console.error(`Error exchanging code for token witsh ${platform}:`, error.response?.data || error.message);
       throw new Error('Failed to exchange authorization code for access token');
     }
   }
