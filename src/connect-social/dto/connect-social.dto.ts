@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 import { Transform, Type } from 'class-transformer';
-import { IsEmail, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 import { lowerCaseTransformer } from '@utils/transformers/lower-case.transformer';
 
@@ -47,4 +47,14 @@ export class CreateProfileDto {
   @IsOptional()
   @Type(() => StatusDto)
   status?: StatusDto;
+}
+
+export class CreateProfileSocialDto {
+  @ApiProperty()
+  @IsOptional()
+  code?: string;
+
+  @ApiProperty()
+  @IsString()
+  platform: string
 }
