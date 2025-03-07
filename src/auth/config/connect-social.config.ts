@@ -2,9 +2,8 @@ import { registerAs } from '@nestjs/config';
 
 import { IsBoolean, IsString } from 'class-validator';
 
-import { AuthConfig } from '@auth/config/auth-config.type';
-
 import validateConfig from '../../utils/validate-config';
+import { ConnectSocialType } from './connect-social.type';
 
 class EnvironmentVariablesValidator {
   @IsString()
@@ -35,7 +34,7 @@ class EnvironmentVariablesValidator {
   TIKTOK_REDIRECT_URI: string;
 }
 
-export default registerAs<AuthConfig>('auth', () => {
+export default registerAs<ConnectSocialType>('auth', () => {
   validateConfig(process.env, EnvironmentVariablesValidator);
 
   return {

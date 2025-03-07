@@ -1,92 +1,59 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
-
-import bcrypt from 'bcryptjs';
-
-import { ExceptionTitleList } from '@common/constants/exception-title-list.constants';
-import { StatusCodesList } from '@common/constants/status-codes-list.constants';
-import { CustomHttpException } from '@exception/custom-http.exception';
-import { DeepPartial } from '@utils/types/deep-partial.type';
-import { EntityCondition } from '@utils/types/entity-condition.type';
-import { IPaginationOptions } from '@utils/types/pagination-options';
-
-import { AuthProvidersEnum } from '@auth/auth-providers.enum';
-import { FilesService } from '@files/files.service';
-import { RoleEnum } from '@roles/roles.enum';
-import { StatusEnum } from '@statuses/statuses.enum';
-
-import { NullableType } from '../utils/types/nullable.type';
-import { CreateProfileDto } from './dto/connect-social.dto';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import axios from 'axios';
 
 @Injectable()
 export class ConnectSocialService {
-  constructor(
-    private readonly usersRepository: UserRepository,
-    private readonly filesService: FilesService,
-  ) {}
+  constructor(private readonly configService: ConfigService) {}
 
-  async create(createProfileDto: CreateProfileDto): Promise<User> {
-    const clonedPayload = {
-      provider: AuthProvidersEnum.email,
-      ...createProfileDto,
-    };
-
-    if (clonedPayload.password) {
-      const salt = await bcrypt.genSalt();
-      clonedPayload.password = await bcrypt.hash(clonedPayload.password, salt);
-    }
-
-    if (clonedPayload.email) {
-      const userObject = await this.usersRepository.findOne({
-        email: clonedPayload.email,
-      });
-      if (userObject) {
-        throw new CustomHttpException(
-          ExceptionTitleList.EmailAlreadyExists,
-          HttpStatus.UNPROCESSABLE_ENTITY,
-          StatusCodesList.UnprocessableEntity,
-        );
-      }
-    }
-
-    if (clonedPayload.photo?.id) {
-      const fileObject = await this.filesService.findOne({
-        id: clonedPayload.photo.id,
-      });
-      if (!fileObject) {
-        throw new CustomHttpException(
-          ExceptionTitleList.ImageNotExists,
-          HttpStatus.UNPROCESSABLE_ENTITY,
-          StatusCodesList.UnprocessableEntity,
-        );
-      }
-    }
-
-    if (clonedPayload.role?.id) {
-      const roleObject = Object.values(RoleEnum).includes(
-        clonedPayload.role.id,
-      );
-      if (!roleObject) {
-        throw new CustomHttpException(
-          ExceptionTitleList.RoleNotExists,
-          HttpStatus.UNPROCESSABLE_ENTITY,
-          StatusCodesList.UnprocessableEntity,
-        );
-      }
-    }
-
-    if (clonedPayload.status?.id) {
-      const statusObject = Object.values(StatusEnum).includes(
-        clonedPayload.status.id,
-      );
-      if (!statusObject) {
-        throw new CustomHttpException(
-          ExceptionTitleList.StatusNotExists,
-          HttpStatus.UNPROCESSABLE_ENTITY,
-          StatusCodesList.UnprocessableEntity,
-        );
-      }
-    }
-
-    return this.usersRepository.create(clonedPayload);
+  async getFacebookAuthUrl(): Promise<string> {
+    const clientId = this.configService.get<string>('FACEBOOK_CLIENT_ID');
+    return `https://www.facebook.com/v12.0/dialog/oauth?client_id=${clientId}&redirect_uri=${this.configService.get<string>('FACEBOOK_REDIRECT_URI')}`;
   }
+
+  async getGoogleAuthUrl(): Promise<string> {
+    const clientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
+    return `https://accounts.google.com/o/oauth2/auth?client_id=${clientId}&redirect_uri=${this.configService.get<string>('GOOGLE_REDIRECT_URI')}&response_type=code&scope=email profile`;
+  }
+
+  
+  async getTikTokAuthUrl(): Promise<string> {
+    const clientId = this.configService.get<string>('TIKTOK_CLIENT_ID');
+    return `https://www.tiktok.com/auth/authorize?client_key=${clientId}&scope=user.info.basic&redirect_uri=${this.configService.get<string>('TIKTOK_REDIRECT_URI')}&response_type=code`;
+  }
+
+  async exchangeCodeForToken(platform: string, code: string): Promise<any> {
+    console.log({platform, code})
+    const apiUrl = {
+      facebook: 'https://graph.facebook.com/v12.0/oauth/access_token',
+      google: 'https://oauth2.googleapis.com/token',
+      tiktok: 'https://open-api.tiktok.com/oauth/access_token/',
+    }[platform];
+  
+    if (!apiUrl) {
+      throw new Error(`Unsupported platform: ${platform}`);
+    }
+  
+    const clientId = this.configService.get<string>(`${platform.toUpperCase()}_CLIENT_ID`);
+    const clientSecret = this.configService.get<string>(`${platform.toUpperCase()}_CLIENT_SECRET`);
+    const redirectUri = this.configService.get<string>(`${platform.toUpperCase()}_REDIRECT_URI`);
+  
+    try {
+      const response = await axios.post(apiUrl, {
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code',
+      }, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      console.log(response.data)
+      return response.data;
+    } catch (error) {
+      console.error(`Error exchanging code for token with ${platform}:`, error.response?.data || error.message);
+      throw new Error('Failed to exchange authorization code for access token');
+    }
+  }
+  
 }
