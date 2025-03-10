@@ -1,5 +1,6 @@
 import 'dotenv/config';
-
+import * as fs from 'fs';
+import * as path from 'path';
 import {
   ClassSerializerInterceptor,
   ValidationPipe,
@@ -24,11 +25,16 @@ import validationOptions from './utils/validation-options';
 async function bootstrap() {
   const allowedOrigins =
     process.env.ALLOWED_ORIGINS?.split(',') || ([] as string[]);
+  const httpsOptions = {
+    key: fs.readFileSync(path.join(__dirname, '../cert/key.pem')),
+    cert: fs.readFileSync(path.join(__dirname, '../cert/cert.pem')),
+  };
   const app = await NestFactory.create(AppModule, {
     cors: {
       credentials: true,
       origin: allowedOrigins,
     },
+    httpsOptions, // Enable HTTPS
   });
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   const configService = app.get(ConfigService<AllConfigType>);
@@ -72,9 +78,9 @@ async function bootstrap() {
     app.getHttpAdapter().get('/docs.yaml', (req, res) => {
       res.redirect('/docs-yaml'); // ✅ Redirect to existing NestJS YAML
     });
-    
+
   }
-  
+
 
   await app.listen(configService.getOrThrow('app.port', { infer: true }));
 }
