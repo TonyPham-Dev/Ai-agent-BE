@@ -68,6 +68,11 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, options);
   if (process.env.NODE_ENV !== 'production') {
     SwaggerModule.setup('docs', app, document);
+
+    app.getHttpAdapter().get('/docs.yaml', (req, res) => {
+      res.redirect('/docs-yaml'); // ✅ Redirect to existing NestJS YAML
+    });
+    
   }
   
 
