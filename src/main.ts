@@ -34,7 +34,7 @@ async function bootstrap() {
       credentials: true,
       origin: allowedOrigins,
     },
-    httpsOptions, // Enable HTTPS
+    // httpsOptions, // Enable HTTPS
   });
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   const configService = app.get(ConfigService<AllConfigType>);
