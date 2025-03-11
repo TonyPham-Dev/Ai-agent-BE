@@ -8,5 +8,6 @@ export type ConnectSocialType = {
     tiktokClientId?: string;
     tiktokClientSecret?: string;
     tiktokRedirectUri?: string;
+    tiktokDeveloperVerification?: string;
   };
   

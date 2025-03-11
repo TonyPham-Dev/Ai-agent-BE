@@ -43,7 +43,7 @@ async function bootstrap() {
   app.setGlobalPrefix(
     configService.getOrThrow('app.apiPrefix', { infer: true }),
     {
-      exclude: ['/'],
+      exclude: ['/', 'tiktok-developers-site-verification.txt'],
     },
   );
   app.enableVersioning({

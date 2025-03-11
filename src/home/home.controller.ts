@@ -1,4 +1,4 @@
-import { Controller, Get, Req, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Req, Res, SetMetadata, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 import { HomeService } from './home.service';
@@ -6,18 +6,14 @@ import { Roles } from '@roles/roles.decorator';
 import { RoleEnum } from '@roles/roles.enum';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '@roles/roles.guard';
-
+import { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 @ApiTags('Home')
 @Controller()
-@Roles(RoleEnum.admin, RoleEnum.user)
-@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class HomeController {
-  constructor(private service: HomeService) {}
-
-  @Get()
-  appInfo(@Request() req: any) {
-    const user = req.user;
-    console.log({ user });
-    return this.service.appInfo();
+  constructor(private readonly configService: ConfigService) {}
+  @Get('tiktok-developers-site-verification.txt')
+  verifyTikTok(@Res() res: Response) {
+    res.type('text/plain').send(this.configService.get<string>('TIKTOK_DEVELOPER_VERIFICATION'));
   }
 }
