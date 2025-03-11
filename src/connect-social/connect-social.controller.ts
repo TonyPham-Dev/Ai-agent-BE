@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Redirect } from '@nestjs/common';
+import { Controller, Get, Post, Query, Redirect } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ConnectSocialService } from './connect-social.service';
 
@@ -23,8 +23,14 @@ export class ConnectSocialController {
   }
 
   @Get('callback')
-  async handleAuthCallback(@Query('code') code: string, @Query('platform') platform: string) {
-    const token = await this.connectSocialService.exchangeCodeForToken(platform, code);
+  async handleAuthCallbackGet(@Query('code') code: string) {
+    const token = await this.connectSocialService.exchangeCodeForToken(code);
+    return { accessToken: token.access_token, user: token };
+  }
+
+  @Post('callback')
+  async handleAuthCallbackPost(@Query('code') code: string) {
+    const token = await this.connectSocialService.exchangeCodeForToken(code);
     return { accessToken: token.access_token, user: token };
   }
 }
