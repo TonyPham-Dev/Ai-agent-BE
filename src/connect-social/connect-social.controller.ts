@@ -1,6 +1,7 @@
-import { Controller, Get, HttpCode, HttpStatus, Post, Query, Redirect } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Post, Query, Redirect, Request, Response } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ConnectSocialService } from './connect-social.service';
+import { CallBackTiktokDto } from './dto/connect-social.dto';
 
 @ApiTags('Social Connect')
 @Controller('connect/social')
@@ -19,18 +20,19 @@ export class ConnectSocialController {
 
   @Get('tiktok')
   async getTiktokAuthUrl() {
-    return { url: await this.connectSocialService.getTikTokAuthUrl() };
+    const url = await this.connectSocialService.getTikTokAuthUrl()
+    return url;
   }
 
   @Get('callback')
-  async handleAuthCallbackGet(@Query('code') code: string) {
+  async handleAuthCallbackGet(@Request() req: any, @Query('code') code?: CallBackTiktokDto) {
     const token = await this.connectSocialService.exchangeCodeForToken(code);
     return { accessToken: token.access_token, user: token };
   }
 
   @Post('callback')
   @HttpCode(HttpStatus.OK)
-  async handleAuthCallbackPost(@Query('code') code: string) {
+  async handleAuthCallbackPost(@Request() req: any, @Query('code') code?: CallBackTiktokDto) {
     const token = await this.connectSocialService.exchangeCodeForToken(code);
     return { accessToken: token.access_token, user: token };
   }

@@ -48,3 +48,11 @@ export class CreateProfileDto {
   @Type(() => StatusDto)
   status?: StatusDto;
 }
+
+
+export class CallBackTiktokDto {
+  @ApiProperty({ example: '123' })
+  @IsOptional()
+  code?: string;
+
+}

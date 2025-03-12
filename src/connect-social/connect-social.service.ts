@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
-
+import { CallBackTiktokDto } from './dto/connect-social.dto';
+import * as qs from 'querystring';
 @Injectable()
 export class ConnectSocialService {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) { }
 
   async getFacebookAuthUrl(): Promise<string> {
     const clientId = this.configService.get<string>('FACEBOOK_CLIENT_ID');
@@ -16,43 +17,52 @@ export class ConnectSocialService {
     return `https://accounts.google.com/o/oauth2/auth?client_id=${clientId}&redirect_uri=${this.configService.get<string>('GOOGLE_REDIRECT_URI')}&response_type=code&scope=email profile`;
   }
 
-  
   async getTikTokAuthUrl(): Promise<string> {
     const clientId = this.configService.get<string>('TIKTOK_CLIENT_ID');
-    return `https://www.tiktok.com/auth/authorize?client_key=${clientId}&scope=user.info.basic&redirect_uri=${this.configService.get<string>('TIKTOK_REDIRECT_URI')}&response_type=code`;
+    const csrfState = Math.random().toString(36).substring(7);
+    let url = 'https://www.tiktok.com/v2/auth/authorize';
+
+    url += `?client_key=${clientId}`;
+    url += '&scope=user.info.basic';
+    url += '&response_type=code';
+    url += `&redirect_uri=${encodeURIComponent(`${this.configService.get<string>('TIKTOK_REDIRECT_URI')}`)}`;
+    url += '&state=' + csrfState;
+    return url;
   }
 
-  async exchangeCodeForToken(code: string): Promise<any> {
-    const apiUrl = {
-      facebook: 'https://graph.facebook.com/v12.0/oauth/access_token',
-      google: 'https://oauth2.googleapis.com/token',
-      tiktok: 'https://open-api.tiktok.com/oauth/access_token/',
-    }["tiktok"];
-  
-    if (!apiUrl) {
-      throw new Error(`Unsupported "tiktok": ${"tiktok"}`);
+
+  async exchangeCodeForToken(code?: CallBackTiktokDto): Promise<any> {
+    const apiUrl = 'https://open.tiktokapis.com/v2/oauth/token/';
+
+    const clientId = this.configService.get<string>('TIKTOK_CLIENT_ID');
+    const clientSecret = this.configService.get<string>('TIKTOK_CLIENT_SECRET');
+    const redirectUri = this.configService.get<string>('TIKTOK_REDIRECT_URI');
+
+    if (!code) {
+      throw new Error('Authorization code is required');
     }
-  
-    const clientId = this.configService.get<string>(`TIKTOK_CLIENT_ID`);
-    const clientSecret = this.configService.get<string>(`TIKTOK_CLIENT_SECRET`);
-    const redirectUri = this.configService.get<string>(`TIKTOK_REDIRECT_URI`);
-  
+
+    if (!clientId || !clientSecret || !redirectUri) {
+      throw new Error('Missing TikTok OAuth configuration.');
+    }
     try {
-      const response = await axios.post(apiUrl, {
-        client_id: clientId,
-        client_secret: clientSecret,
-        code,
-        redirect_uri: redirectUri,
-        grant_type: 'authorization_code',
-      }, {
-        headers: { 'Content-Type': 'application/json' }
+      const params = new URLSearchParams();
+      params.append('client_key', clientId);
+      params.append('client_secret', clientSecret);
+      params.append('code', String(code));
+      params.append('redirect_uri', redirectUri);
+      params.append('grant_type', 'authorization_code');
+
+      const response = await axios.post(apiUrl, params, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
       });
-      console.log(response.data)
+
       return response.data;
     } catch (error) {
-      console.error(`Error exchanging code for token witsh tiktok:`, error.response?.data || error.message);
+      console.error('Error exchanging code for token with TikTok:', error.response?.data || error.message);
       throw new Error('Failed to exchange authorization code for access token');
     }
   }
-  
 }
