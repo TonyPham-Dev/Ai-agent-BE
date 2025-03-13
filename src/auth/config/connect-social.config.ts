@@ -35,6 +35,9 @@ class EnvironmentVariablesValidator {
 
   @IsString()
   TIKTOK_DEVELOPER_VERIFICATION: string;
+
+  @IsString()
+  TIKTOK_URL_API: string;
 }
 
 export default registerAs<ConnectSocialType>('auth', () => {
@@ -50,6 +53,7 @@ export default registerAs<ConnectSocialType>('auth', () => {
     tiktokClientId: process.env.TIKTOK_CLIENT_ID,
     tiktokClientSecret: process.env.TIKTOK_CLIENT_SECRET,
     tiktokRedirectUri: process.env.TIKTOK_REDIRECT_URI,
-    tiktokDeveloperVerification: process.env.TIKTOK_DEVELOPER_VERIFICATION
+    tiktokDeveloperVerification: process.env.TIKTOK_DEVELOPER_VERIFICATION,
+    tiktokUrlApi: process.env.TIKTOK_URL_API
   };
 });

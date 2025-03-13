@@ -3,9 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { CallBackTiktokDto } from './dto/connect-social.dto';
 import * as qs from 'querystring';
+import { SCOPE_TIKTOK_API } from 'test/utils/constants';
+import { ConnectSocialRepository } from './infrastructure/persistence/document/connect-social.repository';
+import { ConnectSocialType } from './domain/connect-social';
 @Injectable()
 export class ConnectSocialService {
-  constructor(private readonly configService: ConfigService) { }
+  constructor(private readonly configService: ConfigService, private readonly connectSocialRepository: ConnectSocialRepository) { }
 
   async getFacebookAuthUrl(): Promise<string> {
     const clientId = this.configService.get<string>('FACEBOOK_CLIENT_ID');
@@ -23,7 +26,7 @@ export class ConnectSocialService {
     let url = 'https://www.tiktok.com/v2/auth/authorize';
 
     url += `?client_key=${clientId}`;
-    url += '&scope=user.info.basic';
+    url += `${SCOPE_TIKTOK_API}`;
     url += '&response_type=code';
     url += `&redirect_uri=${encodeURIComponent(`${this.configService.get<string>('TIKTOK_REDIRECT_URI')}`)}`;
     url += '&state=' + csrfState;
@@ -32,8 +35,7 @@ export class ConnectSocialService {
 
 
   async exchangeCodeForToken(code?: CallBackTiktokDto): Promise<any> {
-    const apiUrl = 'https://open.tiktokapis.com/v2/oauth/token/';
-
+    const apiUrl = `${this.configService.get<string>('TIKTOK_URL_API')}/oauth/token/`;
     const clientId = this.configService.get<string>('TIKTOK_CLIENT_ID');
     const clientSecret = this.configService.get<string>('TIKTOK_CLIENT_SECRET');
     const redirectUri = this.configService.get<string>('TIKTOK_REDIRECT_URI');
@@ -58,11 +60,58 @@ export class ConnectSocialService {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       });
+      const access_token = response.data.access_token
+      const infoUser = await this.getInforUser(access_token)
+      const userName = await this.getUserName(access_token)
 
-      return response.data;
+      const existingUser = await this.connectSocialRepository.findOne({ userName: `@${userName}` });
+
+      if (existingUser) {
+        return {  
+          nickName: existingUser.nickName,
+          userName: existingUser.userName,
+          avatarUrl: existingUser.avatarUrl
+        };
+      }
+      const userRepository = await this.connectSocialRepository.create({
+        accessToken: access_token,
+        avatarUrl: infoUser.avatar_url,
+        scope: response.data.scope,
+        expiresIn: Number(response.data.expires_in),
+        refreshToken: response.data.refresh_token,
+        refreshExpiresIn: Number(response.data.refresh_expires_in),
+        openId: response.data.open_id,
+        nickName: infoUser.display_name,
+        userName: `@${userName}`
+      })
+      return {  
+        nickName: userRepository.nickName,
+        userName: userRepository.userName,
+        avatarUrl: userRepository.avatarUrl
+      };
     } catch (error) {
       console.error('Error exchanging code for token with TikTok:', error.response?.data || error.message);
       throw new Error('Failed to exchange authorization code for access token');
     }
+  }
+
+  async getInforUser(token: string) {
+    const user = await axios.get(`${this.configService.get<string>('TIKTOK_URL_API')}/user/info/?fields=open_id,union_id,avatar_url,display_name,user_name`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    return user.data.data.user
+  }
+
+
+  async getUserName(token: string) {
+    const user = await axios.post(`${this.configService.get<string>('TIKTOK_URL_API')}/post/publish/creator_info/query/`, {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': "application/json; charset=UTF-8"
+      }
+    })
+    return user.data.data.creator_username
   }
 }

@@ -25,16 +25,11 @@ import validationOptions from './utils/validation-options';
 async function bootstrap() {
   const allowedOrigins =
     process.env.ALLOWED_ORIGINS?.split(',') || ([] as string[]);
-  const httpsOptions = {
-    key: fs.readFileSync(path.join(__dirname, '../cert/key.pem')),
-    cert: fs.readFileSync(path.join(__dirname, '../cert/cert.pem')),
-  };
   const app = await NestFactory.create(AppModule, {
     cors: {
       credentials: true,
       origin: allowedOrigins,
     },
-    // httpsOptions, // Enable HTTPS
   });
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   const configService = app.get(ConfigService<AllConfigType>);
