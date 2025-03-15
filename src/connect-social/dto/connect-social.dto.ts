@@ -56,3 +56,10 @@ export class CallBackTiktokDto {
   code?: string;
 
 }
+
+export class CheckStatusQrCode {
+  @ApiProperty({ example: 'NKt3I7GGnMPd7lFdlU1MGfyjUzMImzvYaH9Xd8mXfOvsJc7-g2-cxx2uM_h' })
+  @IsOptional()
+  token?: string;
+
+}

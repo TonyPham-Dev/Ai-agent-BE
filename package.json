@@ -73,6 +73,7 @@
     "passport-jwt": "4.0.1",
     "passport-tiktok": "^0.0.0",
     "pg": "8.11.3",
+    "qrcode": "^1.5.4",
     "ramda": "^0.30.1",
     "reflect-metadata": "0.1.13",
     "rimraf": "5.0.5",

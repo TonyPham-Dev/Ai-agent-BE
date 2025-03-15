@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
-import { CallBackTiktokDto } from './dto/connect-social.dto';
+import { CallBackTiktokDto, CheckStatusQrCode } from './dto/connect-social.dto';
 import * as qs from 'querystring';
 import { SCOPE_TIKTOK_API } from 'test/utils/constants';
 import { ConnectSocialRepository } from './infrastructure/persistence/document/connect-social.repository';
 import { ConnectSocialType } from './domain/connect-social';
+import { User } from '@users/domain/user';
+import qrcode from 'qrcode';
+
 @Injectable()
 export class ConnectSocialService {
   constructor(private readonly configService: ConfigService, private readonly connectSocialRepository: ConnectSocialRepository) { }
@@ -33,8 +36,68 @@ export class ConnectSocialService {
     return url;
   }
 
+  async  getTikTokAuthQRCode(user?: User) {
+    try {
+    const clientId = this.configService.get<string>('TIKTOK_CLIENT_ID');
+    const redirectUri = encodeURIComponent(`${this.configService.get<string>('TIKTOK_REDIRECT_URI')}`);
+    const scope = 'user.info.basic,user.info.username';
+    const state = Math.random().toString(36).substring(7);
+  
+    const data = new URLSearchParams();
+    data.append('client_key', clientId || '');
+    data.append('scope', 'user.info.basic,video.list');
+    data.append('state', state);
+    data.append('redirect_uri', redirectUri);
+    const response = await axios.post(
+      `${this.configService.get<string>('TIKTOK_URL_API')}/oauth/get_qrcode/`,
+      data, 
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+    const qrCodeUrl = response.data.scan_qrcode_url;
+    const tokenQrCode = response.data.token;
+    await this.getTikTokStatusQrCode(tokenQrCode, user?.id)
+    return {
+      qrCodeUrl,
+      tokenQrCode
+    };
+    } catch (error) {
+      console.log({errorQR: error})
+      return error
+    }
+  }
 
-  async exchangeCodeForToken(code?: CallBackTiktokDto): Promise<any> {
+  async getTikTokStatusQrCode(token?: CheckStatusQrCode, userId?: string): Promise<string> {
+    console.log("to here check qr", token)
+    const clientId = this.configService.get<string>('TIKTOK_CLIENT_ID');
+    const clientSecret = this.configService.get<string>('TIKTOK_CLIENT_SECRET');
+    const data = new URLSearchParams();
+    data.append('client_key', clientId || '');
+    data.append('client_secret', clientSecret || '');
+    data.append('token', String(token));
+    const response = await axios.post(
+      `${this.configService.get<string>('TIKTOK_URL_API')}/oauth/check_qrcode/`,
+      data, 
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+    const status = response.data.status
+    const code = response.data.code
+    if (status === "confirmed" || status === "scanned") {
+      await this.exchangeCodeForToken(code, userId)
+    }
+    return response.data.status
+  }
+
+
+  async exchangeCodeForToken(code?: CallBackTiktokDto, userId?: string): Promise<any> {
+    console.log("to here")
     const apiUrl = `${this.configService.get<string>('TIKTOK_URL_API')}/oauth/token/`;
     const clientId = this.configService.get<string>('TIKTOK_CLIENT_ID');
     const clientSecret = this.configService.get<string>('TIKTOK_CLIENT_SECRET');
@@ -74,6 +137,7 @@ export class ConnectSocialService {
         };
       }
       const userRepository = await this.connectSocialRepository.create({
+        userId: userId || "",
         accessToken: access_token,
         avatarUrl: infoUser.avatar_url,
         scope: response.data.scope,
