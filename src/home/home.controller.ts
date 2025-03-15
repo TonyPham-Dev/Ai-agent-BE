@@ -12,13 +12,8 @@ import { ConfigService } from '@nestjs/config';
 @Controller()
 export class HomeController {
   constructor(private readonly configService: ConfigService) {}
-  @Get('tiktok-developers-site-verification.txt')
-  verifyTikTok(@Res() res: Response) {
-    res.type('text/plain').send(this.configService.get<string>('TIKTOK_DEVELOPER_VERIFICATION'));
-  }
-
   @Get()
   isRunServer(@Res() res: Response) {
-    res.status(200).json({ message: 'Server is running' });
+    res.type('text/plain').send(this.configService.get<string>('TIKTOK_DEVELOPER_VERIFICATION'));
   }
 }

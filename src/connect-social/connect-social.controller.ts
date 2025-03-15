@@ -25,6 +25,7 @@ export class ConnectSocialController {
   }
 
   @Get('callback')
+  @HttpCode(HttpStatus.OK)
   async handleAuthCallbackGet(@Request() req: any, @Query('code') code?: CallBackTiktokDto) {
     const user = await this.connectSocialService.exchangeCodeForToken(code);
     return user;

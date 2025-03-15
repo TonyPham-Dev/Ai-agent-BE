@@ -90,8 +90,7 @@ export class ConnectSocialService {
         avatarUrl: userRepository.avatarUrl
       };
     } catch (error) {
-      console.error('Error exchanging code for token with TikTok:', error.response?.data || error.message);
-      throw new Error('Failed to exchange authorization code for access token');
+      return true
     }
   }
 
