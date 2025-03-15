@@ -43,5 +43,5 @@ jobs:
             echo "🔨 Building project..."
             npm run build
 
-            echo "🚀 Restarting API..."
-            pm2 restart api || pm2 start dist/main.js --name api
+            echo "🚀 Restarting main..."
+            pm2 restart main || pm2 start dist/main.js --name main
